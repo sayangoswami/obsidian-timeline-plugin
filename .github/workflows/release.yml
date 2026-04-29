@@ -35,3 +35,8 @@ jobs:
             main.js manifest.json styles.css
 
           echo "Release $tag created (draft). Please review and publish it on GitHub."
+
+# Create a tag that matches the version in the manifest.json file.
+
+# git tag -a 1.0.1 -m "1.0.1"
+# git push origin 1.0.1

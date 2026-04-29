@@ -5,8 +5,8 @@
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
-		"build": "esbuild src/main.ts --bundle --outfile=main.js --external:obsidian --format=cjs",
-		"dev": "esbuild src/main.ts --bundle --outfile=main.js --external:obsidian --format=cjs --watch",
+		"build": "esbuild src/main.ts --bundle --outfile=main.js --format=cjs --external:obsidian",
+  		"dev":   "esbuild src/main.ts --bundle --outfile=main.js --format=cjs --external:obsidian --watch",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint ."
 	},

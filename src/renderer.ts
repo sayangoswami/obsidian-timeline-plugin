@@ -1,15 +1,11 @@
-import { TimelineData, TimelineTask, Swimlane } from './types';
-
-const DAY_WIDTH = 28;       // pixels per day (base zoom)
-const ROW_HEIGHT = 36;
-const HEADER_HEIGHT = 48;
-const LANE_LABEL_WIDTH = 200;
+import { Timeline, DataSet } from 'vis-timeline/standalone';
+import type { TimelineOptions, TimelineGroup, TimelineItem } from 'vis-timeline';
+import { TimelineData, TimelineTask } from './types';
 
 export class TimelineRenderer {
   private container: HTMLElement;
   private data: TimelineData;
-  private zoom = 1;
-  private scrollX = 0;
+  private timeline: Timeline | null = null;
 
   constructor(container: HTMLElement, data: TimelineData) {
     this.container = container;
@@ -18,170 +14,125 @@ export class TimelineRenderer {
 
   render() {
     this.container.empty();
-    this.container.addClass('timeline-root');
 
-    const totalDays = this.getDaySpan(this.data.minDate, this.data.maxDate) + 14;
-    const totalWidth = totalDays * DAY_WIDTH * this.zoom;
+    // ── Groups (swimlanes) ──────────────────────────────────
+    const groups: TimelineGroup[] = [];
+    const items: TimelineItem[] = [];
+    let itemId = 0;
+    let groupId = 0;
 
-    // ── Toolbar ──
-    const toolbar = this.container.createDiv('timeline-toolbar');
-    this.buildToolbar(toolbar);
-
-    // ── Scroll wrapper ──
-    const scrollArea = this.container.createDiv('timeline-scroll-area');
-
-    // ── Left: Lane labels (sticky) ──
-    const labelsCol = scrollArea.createDiv('timeline-labels-col');
-
-    // ── Right: Scrollable canvas ──
-    const canvas = scrollArea.createDiv('timeline-canvas');
-    canvas.style.width = `${totalWidth + LANE_LABEL_WIDTH}px`;
-
-    // Date header
-    this.renderDateHeader(canvas, totalDays, totalWidth);
-
-    // Swimlanes
     for (const sl of this.data.swimlanes) {
-      this.renderSwimlane(labelsCol, canvas, sl, totalDays, totalWidth);
+      const slGroupId = groupId++;
+
+      // L2 swimlane — nestedGroups lists its children
+      const childIds: number[] = [];
+
+      // Direct tasks go in the L2 group itself
+      for (const task of sl.tasks) {
+        items.push(this.taskToItem(task, slGroupId, itemId++));
+      }
+
+      // L3 sub-swimlanes
+      for (const sub of sl.subSwimlanes) {
+        const subGroupId = groupId++;
+        childIds.push(subGroupId);
+
+        groups.push({
+          id: subGroupId,
+          content: `<span class="tl-group-l3">${sub.label}</span>`,
+        });
+
+        for (const task of sub.tasks) {
+          items.push(this.taskToItem(task, subGroupId, itemId++));
+        }
+      }
+
+      groups.push({
+        id: slGroupId,
+        content: `<span class="tl-group-l2">${sl.label}</span>`,
+        nestedGroups: childIds.length ? childIds : undefined,
+        showNested: true,
+      });
     }
 
-    // ── Zoom / scroll behaviour ──
-    canvas.addEventListener('wheel', (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        this.zoom = Math.min(4, Math.max(0.3, this.zoom * (e.deltaY < 0 ? 1.1 : 0.9)));
-        this.render();
-      }
-    }, { passive: false });
+    // vis-timeline wants groups in id order for nesting to work correctly
+    groups.sort((a, b) => (a.id as number) - (b.id as number));
+
+    const groupsDs = new DataSet(groups);
+    const itemsDs  = new DataSet(items);
+
+    // ── Visible window: pad 1 week either side ──────────────
+    const start = new Date(this.data.minDate);
+    start.setDate(start.getDate() - 7);
+    const end = new Date(this.data.maxDate);
+    end.setDate(end.getDate() + 7);
+
+    // ── Options ─────────────────────────────────────────────
+    const options: TimelineOptions = {
+        start,
+        end,
+        stack: true,
+        stackSubgroups: true,
+        orientation: { axis: 'top' },
+        zoomMin: 1000 * 60 * 60 * 24 * 3,
+        zoomMax: 1000 * 60 * 60 * 24 * 365 * 3,
+        moveable: true,
+        zoomable: true,
+        selectable: true,
+        groupHeightMode: 'fitItems',  // ← key change: shrink each row to its content
+        margin: { item: { horizontal: 4, vertical: 4 }, axis: 6 },
+        tooltip: { followMouse: true, overflowMethod: 'cap' },
+        // height: null,        // ← let vis size itself by content, not the container
+        minHeight: '100%',   // ← still fills the pane when content is small
+    };
+
+    // ── Mount ───────────────────────────────────────────────
+    const wrapper = this.container.createDiv('tl-wrapper');
+    this.timeline = new Timeline(wrapper, itemsDs, groupsDs, options);
+
+    // ── Today button ────────────────────────────────────────
+    const toolbar = this.container.createDiv('tl-toolbar');
+    toolbar.style.cssText = 'position:absolute;top:8px;right:12px;z-index:100;display:flex;gap:6px;';
+
+    const btn = (label: string, fn: () => void) => {
+      const b = toolbar.createEl('button', { text: label, cls: 'tl-btn' });
+      b.onclick = fn;
+    };
+
+    btn('Today', () => this.timeline!.moveTo(new Date()));
+    btn('Fit All', () => this.timeline!.fit());
+
+    this.container.style.position = 'relative';
+    this.container.appendChild(toolbar);
   }
 
-  private buildToolbar(toolbar: HTMLElement) {
-    const zoomIn = toolbar.createEl('button', { text: '＋', cls: 'timeline-btn' });
-    const zoomOut = toolbar.createEl('button', { text: '－', cls: 'timeline-btn' });
-    const today = toolbar.createEl('button', { text: 'Today', cls: 'timeline-btn' });
-    const fitAll = toolbar.createEl('button', { text: 'Fit All', cls: 'timeline-btn' });
+  private taskToItem(task: TimelineTask, groupId: number, id: number): TimelineItem {
+    const tagClass = task.tags.length ? `tl-tag-${task.tags[0]}` : '';
+    const doneClass = task.status === 'done' ? 'tl-done' : '';
+    const tooltip = [
+      `<b>${task.label}</b>`,
+      task.isRange
+        ? `${task.startDate.toDateString()} → ${task.endDate.toDateString()}`
+        : task.startDate.toDateString(),
+      task.tags.map(t => `#${t}`).join(' '),
+      task.note ?? '',
+    ].filter(Boolean).join('<br>');
 
-    zoomIn.onclick = () => { this.zoom = Math.min(4, this.zoom * 1.25); this.render(); };
-    zoomOut.onclick = () => { this.zoom = Math.max(0.3, this.zoom * 0.8); this.render(); };
-    today.onclick = () => this.scrollToDate(new Date());
-    fitAll.onclick = () => {
-      const span = this.getDaySpan(this.data.minDate, this.data.maxDate);
-      const availWidth = this.container.clientWidth - LANE_LABEL_WIDTH - 40;
-      this.zoom = availWidth / (span * DAY_WIDTH);
-      this.render();
+    return {
+      id,
+      group: groupId,
+      content: `<span class="tl-item-label">${task.label}</span>`,
+      start: task.startDate,
+      // vis needs end > start even for point events; use type:'point' instead
+      end: task.isRange ? task.endDate : undefined,
+      type: task.isRange ? 'range' : 'point',
+      title: tooltip,               // shown as tooltip on hover
+      className: `tl-item ${doneClass} ${tagClass}`.trim(),
     };
   }
 
-  private renderDateHeader(canvas: HTMLElement, totalDays: number, totalWidth: number) {
-    const header = canvas.createDiv('timeline-date-header');
-    header.style.width = `${totalWidth}px`;
-
-    const startDate = new Date(this.data.minDate);
-    startDate.setDate(startDate.getDate() - 7);
-
-    let cursor = new Date(startDate);
-    cursor.setDate(1); // snap to month start
-
-    while (cursor <= this.data.maxDate) {
-      const offset = this.getDaySpan(startDate, cursor) * DAY_WIDTH * this.zoom;
-      const monthLabel = header.createDiv('timeline-month-label');
-      monthLabel.style.left = `${offset}px`;
-      monthLabel.setText(cursor.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
-
-      // Tick marks per week
-      for (let w = 0; w < 5; w++) {
-        const weekDate = new Date(cursor);
-        weekDate.setDate(weekDate.getDate() + w * 7);
-        const wOffset = this.getDaySpan(startDate, weekDate) * DAY_WIDTH * this.zoom;
-        const tick = header.createDiv('timeline-week-tick');
-        tick.style.left = `${wOffset}px`;
-      }
-
-      cursor.setMonth(cursor.getMonth() + 1);
-    }
-
-    // Today line
-    const todayOffset = this.getDaySpan(startDate, new Date()) * DAY_WIDTH * this.zoom;
-    const todayLine = canvas.createDiv('timeline-today-line');
-    todayLine.style.left = `${todayOffset}px`;
-    todayLine.style.height = '100%';
-  }
-
-  private renderSwimlane(
-    labelsCol: HTMLElement,
-    canvas: HTMLElement,
-    sl: Swimlane,
-    totalDays: number,
-    totalWidth: number
-  ) {
-    const startDate = new Date(this.data.minDate);
-    startDate.setDate(startDate.getDate() - 7);
-
-    // Label
-    const laneLabel = labelsCol.createDiv('timeline-lane-label timeline-lane-label--l2');
-    laneLabel.setText(sl.label);
-
-    // Row
-    const row = canvas.createDiv('timeline-lane-row timeline-lane-row--l2');
-    row.style.width = `${totalWidth}px`;
-
-    // Direct tasks
-    for (const task of sl.tasks) {
-      this.renderTask(row, task, startDate);
-    }
-
-    // Sub-swimlanes (L3)
-    for (const sub of sl.subSwimlanes) {
-      const subLabel = labelsCol.createDiv('timeline-lane-label timeline-lane-label--l3');
-      subLabel.setText(sub.label);
-
-      const subRow = canvas.createDiv('timeline-lane-row timeline-lane-row--l3');
-      subRow.style.width = `${totalWidth}px`;
-
-      for (const task of sub.tasks) {
-        this.renderTask(subRow, task, startDate);
-      }
-    }
-  }
-
-  private renderTask(row: HTMLElement, task: TimelineTask, startDate: Date) {
-    const leftPx = this.getDaySpan(startDate, task.startDate) * DAY_WIDTH * this.zoom;
-    const widthPx = task.isRange
-      ? Math.max(8, this.getDaySpan(task.startDate, task.endDate) * DAY_WIDTH * this.zoom)
-      : 10;
-
-    const bar = row.createDiv('timeline-task');
-    bar.style.left = `${leftPx}px`;
-    bar.style.width = `${widthPx}px`;
-
-    bar.classList.add(task.status === 'done' ? 'timeline-task--done' : 'timeline-task--pending');
-    if (!task.isRange) bar.classList.add('timeline-task--point');
-    if (task.tags.length) bar.addClass(`tag-${task.tags[0]}`);
-
-    const label = bar.createSpan('timeline-task-label');
-    label.setText(task.label);
-
-    // Tooltip
-    bar.setAttribute('aria-label',
-      `${task.label} | ${task.startDate.toDateString()}${task.isRange ? ' → ' + task.endDate.toDateString() : ''}${task.note ? ' | ' + task.note : ''}`
-    );
-    bar.setAttribute('data-tooltip-position', 'top');
-
-    // Click to scroll source
-    bar.addEventListener('click', () => {
-      // Optionally: open/highlight source line via Obsidian's editor API
-      console.log(`Task clicked: ${task.label}`);
-    });
-  }
-
-  private getDaySpan(from: Date, to: Date): number {
-    return Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
-  }
-
-  private scrollToDate(date: Date) {
-    const startDate = new Date(this.data.minDate);
-    startDate.setDate(startDate.getDate() - 7);
-    const offset = this.getDaySpan(startDate, date) * DAY_WIDTH * this.zoom;
-    this.container.querySelector('.timeline-scroll-area')?.scrollTo({ left: offset - 200, behavior: 'smooth' });
+  destroy() {
+    this.timeline?.destroy();
+    this.timeline = null;
   }
 }

@@ -1,186 +1,126 @@
-/* ── Root ─────────────────────────────────────────────────── */
-.timeline-root {
-  display: flex;
-  flex-direction: column;
+/* ── Container ──────────────────────────────────────────── */
+.timeline-view-container {
   height: 100%;
   overflow: hidden;
-  font-family: var(--font-interface);
-  background: var(--background-primary);
-  color: var(--text-normal);
-}
-
-/* ── Toolbar ──────────────────────────────────────────────── */
-.timeline-toolbar {
   display: flex;
-  gap: 6px;
-  padding: 8px 12px;
-  background: var(--background-secondary);
-  border-bottom: 1px solid var(--background-modifier-border);
-  flex-shrink: 0;
+  flex-direction: column;
 }
 
-.timeline-btn {
+.tl-wrapper {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;   /* ← scroll vertically if swimlanes exceed pane height */
+}
+
+/* ── Inherit Obsidian theme colours into vis ─────────────── */
+/* Tell vis not to stretch to fill its container */
+.vis-timeline {
+  border-color: var(--background-modifier-border) !important;
+  background: var(--background-primary) !important;
+  font-family: var(--font-interface) !important;
+  height: auto !important;
+}
+
+.vis-panel.vis-left {             /* group label column */
+  background: var(--background-secondary) !important;
+  border-right: 1px solid var(--background-modifier-border) !important;
+}
+
+.vis-label {
+  border-bottom: 1px solid var(--background-modifier-border) !important;
+  color: var(--text-normal) !important;
+}
+
+.vis-time-axis .vis-text {
+  color: var(--text-muted) !important;
+  font-size: 11px;
+}
+
+.vis-time-axis .vis-grid.vis-minor {
+  border-color: var(--background-modifier-border) !important;
+}
+
+.vis-time-axis .vis-grid.vis-major {
+  border-color: var(--background-modifier-border-focus) !important;
+}
+
+/* Today line */
+.vis-current-time {
+  background: var(--color-red) !important;
+  width: 2px !important;
+  opacity: 0.8;
+}
+
+/* ── Group labels ────────────────────────────────────────── */
+.tl-group-l2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-accent);
+}
+
+.tl-group-l3 {
+  font-size: 12px;
+  padding-left: 14px;
+  color: var(--text-muted);
+}
+
+/* ── Items (task bars) ───────────────────────────────────── */
+.vis-item {
+  border-radius: 4px !important;
+  border-color: transparent !important;
+  font-size: 11px !important;
+}
+
+.vis-item.vis-range,
+.vis-item.vis-point {
+  background: var(--interactive-accent) !important;
+  color: var(--text-on-accent) !important;
+}
+
+.vis-item.vis-selected {
+  border-color: var(--text-accent) !important;
+  box-shadow: 0 0 0 2px var(--interactive-accent-hover) !important;
+}
+
+.tl-item-label {
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+/* Done tasks */
+.tl-done.vis-item {
+  opacity: 0.55;
+  text-decoration: line-through;
+  background: var(--background-modifier-success) !important;
+  color: var(--text-normal) !important;
+}
+
+/* Tag colours */
+.tl-tag-marketing.vis-item  { background: #e07b39 !important; border-color: #e07b39 !important; }
+.tl-tag-backend.vis-item    { background: #4a9edd !important; border-color: #4a9edd !important; }
+.tl-tag-design.vis-item     { background: #9b59b6 !important; border-color: #9b59b6 !important; }
+.tl-tag-research.vis-item   { background: #27ae60 !important; border-color: #27ae60 !important; }
+
+/* ── Toolbar ─────────────────────────────────────────────── */
+.tl-btn {
   padding: 4px 10px;
   border-radius: 4px;
   border: 1px solid var(--background-modifier-border);
   background: var(--background-primary);
   color: var(--text-normal);
   cursor: pointer;
-  font-size: 13px;
-}
-.timeline-btn:hover { background: var(--background-modifier-hover); }
-
-/* ── Layout ───────────────────────────────────────────────── */
-.timeline-scroll-area {
-  display: flex;
-  flex: 1;
-  overflow: auto;
-  position: relative;
-}
-
-.timeline-labels-col {
-  position: sticky;
-  left: 0;
-  z-index: 10;
-  width: 200px;
-  flex-shrink: 0;
-  background: var(--background-secondary);
-  border-right: 1px solid var(--background-modifier-border);
-}
-
-.timeline-canvas {
-  position: relative;
-  flex: 1;
-  overflow: visible;
-}
-
-/* ── Date Header ──────────────────────────────────────────── */
-.timeline-date-header {
-  height: 48px;
-  position: relative;
-  background: var(--background-secondary-alt);
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.timeline-month-label {
-  position: absolute;
-  top: 8px;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.timeline-week-tick {
-  position: absolute;
-  top: 28px;
-  width: 1px;
-  height: 12px;
-  background: var(--background-modifier-border);
-}
-
-.timeline-today-line {
-  position: absolute;
-  top: 0;
-  width: 2px;
-  background: var(--color-red);
-  opacity: 0.7;
-  z-index: 5;
-  pointer-events: none;
-}
-
-/* ── Lane Labels ──────────────────────────────────────────── */
-.timeline-lane-label {
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  font-weight: 500;
-  border-bottom: 1px solid var(--background-modifier-border);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.timeline-lane-label--l2 {
-  height: 36px;
-  font-size: 13px;
-  background: var(--background-secondary);
-  color: var(--text-accent);
-}
-
-.timeline-lane-label--l3 {
-  height: 36px;
-  padding-left: 24px;
   font-size: 12px;
-  color: var(--text-muted);
-  background: var(--background-primary);
 }
+.tl-btn:hover { background: var(--background-modifier-hover); }
 
-/* ── Lane Rows ────────────────────────────────────────────── */
-.timeline-lane-row {
-  height: 36px;
-  position: relative;
-  border-bottom: 1px solid var(--background-modifier-border);
+/* ── Tooltip ─────────────────────────────────────────────── */
+.vis-tooltip {
+  background: var(--background-secondary) !important;
+  color: var(--text-normal) !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: 6px !important;
+  padding: 8px 10px !important;
+  font-family: var(--font-interface) !important;
+  font-size: 12px !important;
+  box-shadow: var(--shadow-s) !important;
 }
-
-.timeline-lane-row--l2 { background: var(--background-secondary); }
-.timeline-lane-row--l3 { background: var(--background-primary); }
-.timeline-lane-row:hover { background: var(--background-modifier-hover); }
-
-/* ── Tasks ────────────────────────────────────────────────── */
-.timeline-task {
-  position: absolute;
-  top: 6px;
-  height: 24px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  padding: 0 8px;
-  cursor: pointer;
-  overflow: hidden;
-  transition: filter 0.15s, transform 0.1s;
-  box-sizing: border-box;
-  min-width: 8px;
-}
-
-.timeline-task:hover {
-  filter: brightness(1.15);
-  transform: scaleY(1.05);
-  z-index: 20;
-}
-
-.timeline-task--pending {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
-.timeline-task--done {
-  background: var(--background-modifier-success);
-  color: var(--text-normal);
-  opacity: 0.7;
-  text-decoration: line-through;
-}
-
-/* Point event (single date) */
-.timeline-task--point {
-  width: 10px !important;
-  height: 10px;
-  top: 13px;
-  border-radius: 50%;
-  padding: 0;
-}
-
-.timeline-task-label {
-  font-size: 11px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-}
-
-/* Tag-based coloring (optional) */
-.tag-marketing  { background: #e07b39 !important; }
-.tag-backend    { background: #4a9edd !important; }
-.tag-design     { background: #9b59b6 !important; }
-.tag-research   { background: #27ae60 !important; }

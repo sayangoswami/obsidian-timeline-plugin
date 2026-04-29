@@ -46,18 +46,21 @@ export class TimelineView extends TextFileView {
   }
 
   private renderTimeline() {
-    if (!this.data) return;
-    try {
-      const timelineData = parseMarkdown(this.data);
-      this.contentEl.empty();
-      this.renderer = new TimelineRenderer(this.contentEl, timelineData);
-      this.renderer.render();
-    } catch (e) {
-      this.contentEl.empty();
-      this.contentEl.createEl('pre', {
-        text: `Timeline render error:\n${e.message}`,
-        cls: 'timeline-error'
-      });
-    }
+  if (!this.data) return;
+  try {
+    // Destroy previous instance before re-rendering
+    this.renderer?.destroy();
+
+    const timelineData = parseMarkdown(this.data);
+    this.contentEl.empty();
+    this.renderer = new TimelineRenderer(this.contentEl, timelineData);
+    this.renderer.render();
+  } catch (e) {
+    this.contentEl.empty();
+    this.contentEl.createEl('pre', {
+      text: `Timeline render error:\n${e.message}`,
+      cls: 'timeline-error'
+    });
   }
+}
 }

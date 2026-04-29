@@ -1,8 +1,186 @@
-/*
+/* ── Root ─────────────────────────────────────────────────── */
+.timeline-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-interface);
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+/* ── Toolbar ──────────────────────────────────────────────── */
+.timeline-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+  flex-shrink: 0;
+}
 
-If your plugin does not need CSS, delete this file.
+.timeline-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  color: var(--text-normal);
+  cursor: pointer;
+  font-size: 13px;
+}
+.timeline-btn:hover { background: var(--background-modifier-hover); }
 
-*/
+/* ── Layout ───────────────────────────────────────────────── */
+.timeline-scroll-area {
+  display: flex;
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.timeline-labels-col {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--background-secondary);
+  border-right: 1px solid var(--background-modifier-border);
+}
+
+.timeline-canvas {
+  position: relative;
+  flex: 1;
+  overflow: visible;
+}
+
+/* ── Date Header ──────────────────────────────────────────── */
+.timeline-date-header {
+  height: 48px;
+  position: relative;
+  background: var(--background-secondary-alt);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.timeline-month-label {
+  position: absolute;
+  top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.timeline-week-tick {
+  position: absolute;
+  top: 28px;
+  width: 1px;
+  height: 12px;
+  background: var(--background-modifier-border);
+}
+
+.timeline-today-line {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  background: var(--color-red);
+  opacity: 0.7;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* ── Lane Labels ──────────────────────────────────────────── */
+.timeline-lane-label {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-weight: 500;
+  border-bottom: 1px solid var(--background-modifier-border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-lane-label--l2 {
+  height: 36px;
+  font-size: 13px;
+  background: var(--background-secondary);
+  color: var(--text-accent);
+}
+
+.timeline-lane-label--l3 {
+  height: 36px;
+  padding-left: 24px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--background-primary);
+}
+
+/* ── Lane Rows ────────────────────────────────────────────── */
+.timeline-lane-row {
+  height: 36px;
+  position: relative;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.timeline-lane-row--l2 { background: var(--background-secondary); }
+.timeline-lane-row--l3 { background: var(--background-primary); }
+.timeline-lane-row:hover { background: var(--background-modifier-hover); }
+
+/* ── Tasks ────────────────────────────────────────────────── */
+.timeline-task {
+  position: absolute;
+  top: 6px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: filter 0.15s, transform 0.1s;
+  box-sizing: border-box;
+  min-width: 8px;
+}
+
+.timeline-task:hover {
+  filter: brightness(1.15);
+  transform: scaleY(1.05);
+  z-index: 20;
+}
+
+.timeline-task--pending {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.timeline-task--done {
+  background: var(--background-modifier-success);
+  color: var(--text-normal);
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+/* Point event (single date) */
+.timeline-task--point {
+  width: 10px !important;
+  height: 10px;
+  top: 13px;
+  border-radius: 50%;
+  padding: 0;
+}
+
+.timeline-task-label {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Tag-based coloring (optional) */
+.tag-marketing  { background: #e07b39 !important; }
+.tag-backend    { background: #4a9edd !important; }
+.tag-design     { background: #9b59b6 !important; }
+.tag-research   { background: #27ae60 !important; }

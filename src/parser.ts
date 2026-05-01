@@ -2,15 +2,20 @@ import { TimelineTask, TimelineData, Swimlane, SubSwimlane } from './types';
 
 // ─── Date Parsing ────────────────────────────────────────────────────────────
 
-function parseDate(raw: string, refDate?: Date): { start: Date; end: Date; isRange: boolean } | null {
+function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day); // month is 0-indexed
+}
+
+function parseDate(raw: string): { start: Date; end: Date; isRange: boolean } | null {
   raw = raw.trim();
 
   // Range: [2024-05-01 to 2024-05-15]
   const rangeMatch = raw.match(/^(\d{4}-\d{2}-\d{2})\s+to\s+(\d{4}-\d{2}-\d{2})$/);
   if (rangeMatch) {
     return {
-      start: new Date(rangeMatch[1]),
-      end: new Date(rangeMatch[2]),
+      start: parseLocalDate(rangeMatch[1]),
+      end: parseLocalDate(rangeMatch[2]),
       isRange: true,
     };
   }
@@ -18,15 +23,17 @@ function parseDate(raw: string, refDate?: Date): { start: Date; end: Date; isRan
   // Specific day: [2024-05-10]
   const dayMatch = raw.match(/^(\d{4}-\d{2}-\d{2})$/);
   if (dayMatch) {
-    const d = new Date(dayMatch[1]);
+    const d = parseLocalDate(dayMatch[1]);
     return { start: d, end: d, isRange: false };
   }
 
   // Month/Year numeric: [2024-05]
   const monthYearMatch = raw.match(/^(\d{4})-(\d{2})$/);
   if (monthYearMatch) {
-    const start = new Date(parseInt(monthYearMatch[1]), parseInt(monthYearMatch[2]) - 1, 1);
-    const end = new Date(parseInt(monthYearMatch[1]), parseInt(monthYearMatch[2]), 0); // last day
+    const year  = parseInt(monthYearMatch[1]);
+    const month = parseInt(monthYearMatch[2]) - 1; // 0-indexed
+    const start = new Date(year, month, 1);
+    const end   = new Date(year, month + 1, 0);    // last day of month
     return { start, end, isRange: true };
   }
 
@@ -44,16 +51,15 @@ function parseDate(raw: string, refDate?: Date): { start: Date; end: Date; isRan
     }
   }
 
-  // Relative duration: [+3d] or [1w] — requires a refDate
-  if (refDate) {
-    const relMatch = raw.match(/^\+?(\d+)([dw])$/);
-    if (relMatch) {
-      const amount = parseInt(relMatch[1]);
-      const unit = relMatch[2];
-      const end = new Date(refDate);
-      end.setDate(end.getDate() + (unit === 'w' ? amount * 7 : amount));
-      return { start: new Date(refDate), end, isRange: true };
-    }
+  // Relative duration: [2026-04-20 + 2w] or [2026-04-20 + 3d]
+  const relMatch = raw.match(/^(\d{4}-\d{2}-\d{2})\s*\+\s*(\d+)([dw])$/);
+  if (relMatch) {
+    const start = parseLocalDate(relMatch[1]);
+    const amount = parseInt(relMatch[2]);
+    const unit = relMatch[3];
+    const end = new Date(start);
+    end.setDate(end.getDate() + (unit === 'w' ? amount * 7 : amount));
+    return { start, end, isRange: true };
   }
 
   return null;

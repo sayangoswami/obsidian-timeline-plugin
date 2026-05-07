@@ -90,10 +90,16 @@ export class TimelineRenderer {
     this.data      = data;
     this.plugin    = plugin;
     this.filePath  = filePath;
-
+  
+    const today = new Date();
+  
+    // Always include today in the visible range
+    const dataMin = data.minDate < today ? data.minDate : today;
+    const dataMax = data.maxDate > today ? data.maxDate : today;
+  
     // Pad 7 days either side
-    this.minDate   = addDays(data.minDate, -7);
-    this.maxDate   = addDays(data.maxDate, 7);
+    this.minDate   = addDays(dataMin, -7);
+    this.maxDate   = addDays(dataMax, 7);
     this.totalDays = daysBetween(this.minDate, this.maxDate);
   }
 
@@ -212,13 +218,11 @@ export class TimelineRenderer {
     this.drawDateHeader(canvasWidth);
     this.labelsCol.createDiv('tl-label-header'); // blank cell to align with header
 
-    // ── Today line (drawn once, spans full height) ──
+    // ── Today line ──
     const todayOffset = daysBetween(this.minDate, new Date()) * this.dayPx;
-    if (todayOffset >= 0 && todayOffset <= canvasWidth) {
-      const today = this.canvas.createDiv('tl-today-line');
-      today.style.left   = `${todayOffset}px`;
-      today.style.height = `${rowDefs.reduce((s, r) => s + parseInt(r), 0)}px`;
-    }
+    const todayLine = this.canvas.createDiv('tl-today-line');
+    todayLine.style.left   = `${todayOffset}px`;
+    todayLine.style.height = `${rowDefs.reduce((s, r) => s + parseInt(r), 0)}px`;
 
     // ── Group rows ──
     for (const g of groups) {

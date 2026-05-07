@@ -127,8 +127,8 @@ function parseDependencyDate(raw: string): DependencyRef | null {
     const durUnit = forOnly[3];
     return {
       refId: forOnly[1],
-      offsetDays: 1, // starts the day after ref ends
-      durationDays: durUnit === 'w' ? dur * 7 : dur,
+      offsetDays: 1,                                   // starts the day after ref ends
+      durationDays: durUnit === 'w' ? dur * 7 : dur,   // occupy exactly N days
     };
   }
 
@@ -374,7 +374,8 @@ export function parseMarkdown(content: string): TimelineData {
         task.absoluteDate = { start: today, end: today, isRange: false };
       } else {
         const start = addDays(refEnd, offsetDays);
-        const end = durationDays ? addDays(start, durationDays) : start;
+        // duration of N days means end = start + (N-1) so the task occupies exactly N days
+        const end = durationDays ? addDays(start, durationDays - 1) : start;
         task.absoluteDate = { start, end, isRange: durationDays !== undefined };
         if (task.id) resolvedEnd.set(task.id, end);
       }

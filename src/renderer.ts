@@ -290,41 +290,15 @@ export class TimelineRenderer {
   // ── Task bar ─────────────────────────────────────────────────────────────────
 
   private drawTask(row: HTMLElement, task: TimelineTask, stackRow: number) {
-    const startPx = daysBetween(this.minDate, task.startDate) * this.dayPx;
-    const endPx   = daysBetween(this.minDate, task.endDate)   * this.dayPx;
-    const widthPx = Math.max(task.isRange ? endPx - startPx : 10, 8);
-    const topPx   = ROW_PADDING + stackRow * ROW_HEIGHT;
-
-    const bar = row.createDiv('tl-task');
-    bar.style.left   = `${startPx}px`;
-    bar.style.top    = `${topPx}px`;
-    bar.style.width  = `${widthPx}px`;
-    bar.style.height = `${ROW_HEIGHT - 4}px`;
-
-    // Status class
-    bar.addClass(`tl-${task.status}`);
-
-    // Tag colour (first tag wins, applied via CSS var override)
-    if (task.tags.length) {
-      bar.addClass(`tl-tag-${task.tags[0]}`);
-    }
-
-    // Point event
-    if (!task.isRange) {
-      bar.addClass('tl-point');
-    }
-
-    // Unresolved dependency
-    if (task.unresolvedRef) {
-      bar.addClass('tl-unresolved');
-    }
-
-    // Label
-    const labelEl = bar.createSpan('tl-task-label');
+    const startPx   = daysBetween(this.minDate, task.startDate) * this.dayPx;
+    const endPx     = daysBetween(this.minDate, task.endDate)   * this.dayPx;
+    const widthPx   = Math.max(task.isRange ? endPx - startPx : 10, 8);
+    const topPx     = ROW_PADDING + stackRow * ROW_HEIGHT;
+    const barHeight = ROW_HEIGHT - 4;
+  
     const icon = { done: '✓ ', 'in-progress': '◑ ', blocked: '✕ ', pending: '' }[task.status];
-    labelEl.setText(icon + task.label);
-
-    // Tooltip
+    const labelText = icon + task.label;
+  
     const tip = [
       task.label,
       task.status !== 'pending' ? `Status: ${task.status}` : '',
@@ -335,12 +309,23 @@ export class TimelineRenderer {
       task.note ?? '',
       task.unresolvedRef ? `⚠ ref "${task.unresolvedRef}" not found` : '',
     ].filter(Boolean).join('\n');
-
-    bar.setAttribute('aria-label', tip);
+  
+    const bar = row.createDiv('tl-task');
+    bar.style.left   = `${startPx}px`;
+    bar.style.top    = `${topPx}px`;
+    bar.style.width  = `${widthPx}px`;
+    bar.style.height = `${barHeight}px`;
     bar.setAttribute('title', tip);
-
-    // Click → jump to source
+  
+    bar.addClass(`tl-${task.status}`);
+    if (task.tags.length)   bar.addClass(`tl-tag-${task.tags[0]}`);
+    if (!task.isRange)      bar.addClass('tl-point');
+    if (task.unresolvedRef) bar.addClass('tl-unresolved');
+  
     bar.addEventListener('click', () => this.jumpToSource(task));
+  
+    // Label clipped inside bar — tooltip shows full text on hover
+    bar.createSpan({ text: labelText, cls: 'tl-task-label' });
   }
 
   // ── Zoom ─────────────────────────────────────────────────────────────────────

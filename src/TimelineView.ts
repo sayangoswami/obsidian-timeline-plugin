@@ -40,10 +40,10 @@ export class TimelineView extends TextFileView {
   }
 
   // Called after the file is fully loaded into the view
-  async onLoadFile(file: import('obsidian').TFile): Promise<void> {
-    await super.onLoadFile(file);
-    this.renderTimeline();
-  }
+  // async onLoadFile(file: import('obsidian').TFile): Promise<void> {
+  //   await super.onLoadFile(file);
+  //   this.renderTimeline();
+  // }
 
   private renderTimeline() {
   if (!this.data) return;
@@ -52,10 +52,16 @@ export class TimelineView extends TextFileView {
     this.renderer?.destroy();
 
     const timelineData = parseMarkdown(this.data);
+
+    console.log('Parsed timeline data:', JSON.stringify(timelineData, null, 2));
+    console.log('Raw markdown length:', this.data.length);
+    console.log('Swimlanes found:', timelineData.swimlanes.length);
+
     this.contentEl.empty();
     this.renderer = new TimelineRenderer(this.contentEl, timelineData);
     this.renderer.render();
   } catch (e) {
+    console.error('Timeline render error:', e);
     this.contentEl.empty();
     this.contentEl.createEl('pre', {
       text: `Timeline render error:\n${e.message}`,

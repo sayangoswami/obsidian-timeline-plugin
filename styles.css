@@ -1,109 +1,27 @@
-/* ── Container ──────────────────────────────────────────── */
-.timeline-view-container {
-  height: 100%;
-  overflow: hidden;
+/* ── Root ────────────────────────────────────────────────── */
+.tl-root {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: var(--font-interface);
+  color: var(--text-normal);
+  background: var(--background-primary);
 }
-
-.tl-wrapper {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;   /* ← scroll vertically if swimlanes exceed pane height */
-}
-
-/* ── Inherit Obsidian theme colours into vis ─────────────── */
-/* Tell vis not to stretch to fill its container */
-.vis-timeline {
-  border-color: var(--background-modifier-border) !important;
-  background: var(--background-primary) !important;
-  font-family: var(--font-interface) !important;
-  height: auto !important;
-}
-
-.vis-panel.vis-left {             /* group label column */
-  background: var(--background-secondary) !important;
-  border-right: 1px solid var(--background-modifier-border) !important;
-}
-
-.vis-label {
-  border-bottom: 1px solid var(--background-modifier-border) !important;
-  color: var(--text-normal) !important;
-}
-
-.vis-time-axis .vis-text {
-  color: var(--text-muted) !important;
-  font-size: 11px;
-}
-
-.vis-time-axis .vis-grid.vis-minor {
-  border-color: var(--background-modifier-border) !important;
-}
-
-.vis-time-axis .vis-grid.vis-major {
-  border-color: var(--background-modifier-border-focus) !important;
-}
-
-/* Today line */
-.vis-current-time {
-  background: var(--color-red) !important;
-  width: 2px !important;
-  opacity: 0.8;
-}
-
-/* ── Group labels ────────────────────────────────────────── */
-.tl-group-l2 {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-accent);
-}
-
-.tl-group-l3 {
-  font-size: 12px;
-  padding-left: 14px;
-  color: var(--text-muted);
-}
-
-/* ── Items (task bars) ───────────────────────────────────── */
-.vis-item {
-  border-radius: 4px !important;
-  border-color: transparent !important;
-  font-size: 11px !important;
-}
-
-.vis-item.vis-range,
-.vis-item.vis-point {
-  background: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
-}
-
-.vis-item.vis-selected {
-  border-color: var(--text-accent) !important;
-  box-shadow: 0 0 0 2px var(--interactive-accent-hover) !important;
-}
-
-.tl-item-label {
-  padding: 0 6px;
-  white-space: nowrap;
-}
-
-/* Done tasks */
-.tl-done.vis-item {
-  opacity: 0.55;
-  text-decoration: line-through;
-  background: var(--background-modifier-success) !important;
-  color: var(--text-normal) !important;
-}
-
-/* Tag colours */
-.tl-tag-marketing.vis-item  { background: #e07b39 !important; border-color: #e07b39 !important; }
-.tl-tag-backend.vis-item    { background: #4a9edd !important; border-color: #4a9edd !important; }
-.tl-tag-design.vis-item     { background: #9b59b6 !important; border-color: #9b59b6 !important; }
-.tl-tag-research.vis-item   { background: #27ae60 !important; border-color: #27ae60 !important; }
 
 /* ── Toolbar ─────────────────────────────────────────────── */
+.tl-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  background: var(--background-secondary);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
 .tl-btn {
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 4px;
   border: 1px solid var(--background-modifier-border);
   background: var(--background-primary);
@@ -113,14 +31,191 @@
 }
 .tl-btn:hover { background: var(--background-modifier-hover); }
 
-/* ── Tooltip ─────────────────────────────────────────────── */
-.vis-tooltip {
-  background: var(--background-secondary) !important;
-  color: var(--text-normal) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 6px !important;
-  padding: 8px 10px !important;
-  font-family: var(--font-interface) !important;
-  font-size: 12px !important;
-  box-shadow: var(--shadow-s) !important;
+/* ── Grid wrapper ────────────────────────────────────────── */
+.tl-grid-wrap {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
+
+/* ── Label column (sticky left) ──────────────────────────── */
+.tl-labels {
+  width: 220px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--background-secondary);
+  border-right: 2px solid var(--background-modifier-border);
+  z-index: 10;
+}
+
+.tl-label-header {
+  height: 48px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.tl-lane-label {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.tl-lane-label--l2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-accent);
+}
+
+.tl-lane-label--l3 {
+  padding-left: 24px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Scroll area ─────────────────────────────────────────── */
+.tl-scroll {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  cursor: grab;
+}
+.tl-scroll:active { cursor: grabbing; }
+
+/* ── Canvas ──────────────────────────────────────────────── */
+.tl-canvas {
+  position: relative;
+  min-height: 100%;
+}
+
+/* ── Date header ─────────────────────────────────────────── */
+.tl-date-header {
+  position: relative;
+  background: var(--background-secondary-alt);
+  border-bottom: 2px solid var(--background-modifier-border);
+  overflow: hidden;
+}
+
+.tl-month-label {
+  position: absolute;
+  top: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.tl-week-tick {
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: 10px;
+  background: var(--background-modifier-border);
+  pointer-events: none;
+}
+
+/* ── Today line ──────────────────────────────────────────── */
+.tl-today-line {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  background: var(--color-red);
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ── Lane rows ───────────────────────────────────────────── */
+.tl-lane-row {
+  position: relative;
+  border-bottom: 1px solid var(--background-modifier-border);
+  box-sizing: border-box;
+}
+
+.tl-row-bg {
+  position: absolute;
+  inset: 0;
+}
+
+/* ── Task bars ───────────────────────────────────────────── */
+.tl-task {
+  position: absolute;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  cursor: pointer;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: filter 0.1s, box-shadow 0.1s;
+  z-index: 2;
+}
+
+.tl-task:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  z-index: 10;
+}
+
+.tl-task-label {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* ── Status colours ──────────────────────────────────────── */
+.tl-pending {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.tl-done {
+  background: var(--background-modifier-success);
+  color: var(--text-normal);
+  opacity: 0.65;
+}
+.tl-done .tl-task-label { text-decoration: line-through; }
+
+.tl-in-progress {
+  background: #f0a500;
+  color: #fff;
+}
+
+.tl-blocked {
+  background: var(--color-red);
+  color: #fff;
+}
+
+/* Point events */
+.tl-point {
+  width: 12px !important;
+  height: 12px !important;
+  border-radius: 50%;
+  padding: 0;
+  top: 50% !important;
+  transform: translateY(-50%);
+}
+.tl-point .tl-task-label { display: none; }
+
+/* Unresolved dependency */
+.tl-unresolved {
+  background: repeating-linear-gradient(
+    45deg, #f0a500, #f0a500 5px, #333 5px, #333 10px
+  ) !important;
+  color: #fff !important;
+}
+
+/* ── Tag colours ─────────────────────────────────────────── */
+.tl-tag-marketing  { background: #e07b39; color: #fff; }
+.tl-tag-backend    { background: #4a9edd; color: #fff; }
+.tl-tag-design     { background: #9b59b6; color: #fff; }
+.tl-tag-research   { background: #27ae60; color: #fff; }

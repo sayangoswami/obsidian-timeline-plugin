@@ -1,21 +1,24 @@
+export type TaskStatus = 'pending' | 'done' | 'in-progress' | 'blocked';
+
 export interface TimelineTask {
-  id: string;
+  id?: string;
   label: string;
-  status: 'done' | 'incomplete';
+  status: TaskStatus;
   startDate: Date;
-  endDate: Date;           // same as startDate for point events
+  endDate: Date;
   isRange: boolean;
   tags: string[];
   note?: string;
-  swimlane: string;        // L2 heading
-  subSwimlane?: string;    // L3 heading (optional)
+  swimlane: string;
+  subSwimlane?: string;
+  unresolvedRef?: string; // set if a dependency ref couldn't be resolved
 }
 
 export interface Swimlane {
   id: string;
   label: string;
   subSwimlanes: SubSwimlane[];
-  tasks: TimelineTask[];   // tasks with no sub-swimlane
+  tasks: TimelineTask[];
 }
 
 export interface SubSwimlane {
